@@ -12,7 +12,7 @@ function extractDomain(url) {
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete' && tab.url) {
     let domain = extractDomain(tab.url);
-    if (!whitelist_domains.has(domain)) {
+    if (whitelist_domains.has(domain)) {
       chrome.scripting.executeScript({
         target: { tabId: tabId },
         func: () => {

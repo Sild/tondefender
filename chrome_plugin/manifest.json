@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Ton Defender",
+  "version": "1.0",
+  "description": "Displays an alert when visiting whitelisted URLs.",
+  "permissions": ["tabs", "scripting"],
+  "host_permissions": [
+    "https://www.example.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+}

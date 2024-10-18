@@ -28,7 +28,8 @@ function is_whitelisted_domain(domain) {
   return ton_connect_allowed_domains.has(domain);
 }
 
-function alert(text) {
+function plugin_alert(tabId, text) {
+  let text = text
   chrome.scripting.executeScript({
     target: { tabId: tabId },
     func: () => {
@@ -36,12 +37,35 @@ function alert(text) {
     }
   });
 }
+
+function plugin_log(tabId, text) {
+  chrome.scripting.executeScript({
+    target: { tabId: tabId },
+    func: () => {
+      console.log(text);
+    }
+  });
+}
+
+
   
 // Listen for tab updates
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete' && tab.url) {
-    console.log("tabId", tabId);
-    // chrome.scripting.executeScript({
+    chrome.scripting.executeScript({
+      target: { tabId: tabId },
+      func: () => {
+        alert("text");
+      }
+    });
+
+    // plugin_alert(tabId, "foo");
+    // plugin_log(tabId, "bar");
+
+
+
+    // chrome.extension.getBackgroundPage().console.log('foo');
+      // chrome.scripting.executeScript({
     //   target: { tabId: tabId },
     //   func: () => document.body.innerHTML
     // }, (results) => {

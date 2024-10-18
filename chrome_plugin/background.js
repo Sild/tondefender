@@ -28,44 +28,28 @@ function is_whitelisted_domain(domain) {
   return ton_connect_allowed_domains.has(domain);
 }
 
-function plugin_alert(tabId, text) {
-  let text = text
-  chrome.scripting.executeScript({
-    target: { tabId: tabId },
-    func: () => {
-      alert(text);
-    }
-  });
-}
-
-function plugin_log(tabId, text) {
-  chrome.scripting.executeScript({
-    target: { tabId: tabId },
-    func: () => {
-      console.log(text);
-    }
-  });
-}
-
-
-  
 // Listen for tab updates
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete' && tab.url) {
     chrome.scripting.executeScript({
       target: { tabId: tabId },
-      func: () => {
-        alert("text");
-      }
+      func: load_handler
     });
+  }
+});
 
-    // plugin_alert(tabId, "foo");
-    // plugin_log(tabId, "bar");
+function load_handler() {
+  alert("You have visited a whitelisted URL." + document.body.innerHTML);
+  console.log("You have visited a whitelisted URL.");
+}
+
+  
+
 
 
 
     // chrome.extension.getBackgroundPage().console.log('foo');
-      // chrome.scripting.executeScript({
+    //   chrome.scripting.executeScript({
     //   target: { tabId: tabId },
     //   func: () => document.body.innerHTML
     // }, (results) => {
@@ -81,5 +65,5 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     //     alert("This site is not whitelisted for TON Connect usage");
     //   }
     // });
-  }
-});
+  // }
+// });

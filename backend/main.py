@@ -1,42 +1,68 @@
-from fastapi import FastAPI, Depends
-from sqlalchemy.orm import Session
-import models
+from fastapi import FastAPI
 import datetime
 
 app = FastAPI()
 
-# Dependency to get the database session
-def get_db():
-    db = models.SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+# Hardcoded data
+sites_confidence = {
+    "https://example.com": "good",
+    "https://badsite.com": "bad",
+    "https://unknownsite.com": "unknown"
+}
+
+coins_confidence = {
+    "Bitcoin": "good",
+    "ScamCoin": "bad",
+    "MysteryCoin": "unknown"
+}
 
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the TonDefender API"}
 
+# Get the confidence value for a site by URL
+@app.get("/site")
+def get_site_confidence(url: str):
+    confidence = sites_confidence.get(url, "undefined")
+    return {"confidence": confidence}
+
+# Get the confidence value for a coin by name
+@app.get("/coin")
+def get_coin_confidence(name: str):
+    confidence = coins_confidence.get(name, "undefined")
+    return {"confidence": confidence}
+
 # Get all sites
 @app.get("/sites")
-def get_sites(db: Session = Depends(get_db)):
-    sites = db.query(models.Site).all()
+def get_sites():
+    sites = []
+    for url, confidence in sites_confidence.items():
+        site = {
+            "url": url,
+            "confidence": confidence,
+            "updated_at": datetime.datetime.utcnow().isoformat()
+        }
+        sites.append(site)
     return sites
 
 # Get all coins
 @app.get("/coins")
-def get_coins(db: Session = Depends(get_db)):
-    coins = db.query(models.Coin).all()
+def get_coins():
+    coins = []
+    for name, confidence in coins_confidence.items():
+        coin = {
+            "name": name,
+            "confidence": confidence,
+            "updated_at": datetime.datetime.utcnow().isoformat()
+        }
+        coins.append(coin)
     return coins
 
-# Get site changes after a specific date
+# Endpoints for changes (return empty lists since data is hardcoded)
 @app.get("/sites/changes")
-def get_site_changes(after: datetime.datetime, db: Session = Depends(get_db)):
-    changes = db.query(models.Site).filter(models.Site.updated_at > after).all()
-    return changes
+def get_site_changes(after: datetime.datetime):
+    return []
 
-# Get coin changes after a specific date
 @app.get("/coins/changes")
-def get_coin_changes(after: datetime.datetime, db: Session = Depends(get_db)):
-    changes = db.query(models.Coin).filter(models.Coin.updated_at > after).all()
-    return changes
+def get_coin_changes(after: datetime.datetime):
+    return []

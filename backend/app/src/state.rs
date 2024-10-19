@@ -60,14 +60,18 @@ impl State {
 
     pub async fn get_asset_confidence(&self, addr: &str) -> anyhow::Result<Confidence> {
         if self.stonfi_whitelist_map.contains_key(addr) {
-            log::debug!("found asset in whitelist map: {}", addr);
+            log::debug!("found asset in whitelist map: {addr}");
             let asset = self.stonfi_whitelist_map.get(addr).unwrap();
             return Ok(asset.confidence.clone())
         }
         let asset = match self.stonfi_client.get_asset(addr).await? {
             Some(rsp) => rsp.asset,
-            None => return Ok(Confidence::Unknown),
+            None => {
+                log::debug!("asset not found: {addr}");
+                return Ok(Confidence::Unknown)
+            },
         };
+        log::debug!("asset {addr} found by extra request");
         let confidence = if asset.blacklisted {
             Confidence::Bad
         } else {

@@ -15,6 +15,6 @@ async fn test_assets() -> Result<()> {
     let rsp = stonfi_client.get_asset(ton_addr).await?;
     let ton = rsp.asset;
     assert_eq!(ton.contract_address, ton_addr);
-    assert_eq!(ton.display_name, "TON");
+    assert_eq!(ton.display_name.unwrap(), "TON");
     Ok(())
 }

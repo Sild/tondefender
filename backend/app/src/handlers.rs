@@ -19,15 +19,11 @@ pub async fn coin(State(state): State<StatePtr>, Query(params): Query<CoinParams
     if address.is_empty() {
         return Response::new(Body::from("'address' param is required"));
     }
-    let asset = match state.read().await.get_asset_confidence(&address).await {
+    let confidence = match state.read().await.get_asset_confidence(&address).await {
         Ok(asset) => asset,
         Err(e) => return Response::new(Body::from(format!("error: {:?}", e))),
     };
-    Response::new(Body::from(format!("{:?}", asset.confidence)))
-
-    // let state = state.read().await;
-    // // let asset = state.get_asset(&address).unwrap();
-    // Response::new(Body::from(format!("{:?}", asset.confidence)));
+    Response::new(Body::from(format!("{:?}", confidence)))
 }
 
 #[derive(Deserialize)]
@@ -40,9 +36,6 @@ pub async fn site(State(state): State<StatePtr>, Query(params): Query<SiteParams
     if site.is_empty() {
         return Response::new(Body::from("'site' param is required"));
     }
-
     let confidence = state.read().await.get_domain_confidence(&site);
-
-
     Response::new(Body::from(confidence))
 }

@@ -12,10 +12,10 @@ impl Client {
         }
     }
 
-    pub async fn get_asset(&self, addr: &str) -> Result<GetAssetResp> {
+    pub async fn get_asset(&self, addr: &str) -> Result<Option<GetAssetResp>> {
         let url = format!("{}/assets/{}", self.api_url, addr);
         let body = reqwest::get(url).await?.text().await?;
-        let response = serde_json::from_str::<GetAssetResp>(&body)?;
+        let response = serde_json::from_str::<Option<GetAssetResp>>(&body)?;
         Ok(response)
     }
 
@@ -25,4 +25,5 @@ impl Client {
         let response = serde_json::from_str::<GetAssetsResp>(&body)?;
         Ok(response)
     }
+
 }

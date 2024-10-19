@@ -38,10 +38,14 @@ impl State {
         let assets = self.stonfi_client.get_assets().await?;
         self.stonfi_whitelist_map.clear();
         for raw_asset in assets.asset_list {
-            let confidence = Confidence::Unknown; // TODO
+            let confidence = if raw_asset.community {
+                Confidence::Unknown
+            } else {
+                Confidence::Ok
+            };
             let asset = Asset {
                 asset_data: raw_asset,
-                confidence,
+                confidence: confidence.clone(),
             };
             self.stonfi_whitelist_map.insert(asset.asset_data.contract_address.clone(), asset);
         }
@@ -54,18 +58,22 @@ impl State {
         Ok(())
     }
 
-    pub async fn get_asset_confidence(&self, addr: &str) -> anyhow::Result<Asset> {
+    pub async fn get_asset_confidence(&self, addr: &str) -> anyhow::Result<Confidence> {
         if self.stonfi_whitelist_map.contains_key(addr) {
+            log::debug!("found asset in whitelist map: {}", addr);
             let asset = self.stonfi_whitelist_map.get(addr).unwrap();
-            Ok(asset.clone())
-        } else {
-            let rsp = self.stonfi_client.get_asset(addr).await?;
-            let asset = Asset {
-                asset_data: rsp.asset,
-                confidence: Confidence::Unknown,
-            };
-            Ok(asset)
+            return Ok(asset.confidence.clone())
         }
+        let asset = match self.stonfi_client.get_asset(addr).await? {
+            Some(rsp) => rsp.asset,
+            None => return Ok(Confidence::Unknown),
+        };
+        let confidence = if asset.blacklisted {
+            Confidence::Bad
+        } else {
+            Confidence::Unknown
+        };
+        Ok(confidence)
     }
 
     pub fn get_domain_confidence(&self, name: &str) -> String {

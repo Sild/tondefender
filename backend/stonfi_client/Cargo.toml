@@ -1,0 +1,18 @@
+[package]
+name = "stonfi_client"
+version.workspace = true
+edition.workspace = true
+description.workspace = true
+repository.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+reqwest.workspace = true
+log.workspace = true
+tokio.workspace = true
+
+[dev-dependencies]
+tokio-test.workspace = true
+env_logger.workspace = true

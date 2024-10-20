@@ -21,6 +21,8 @@ reqwest = {version = "0.12.8"}
 log = "0.4"
 env_logger = "0.11.5"
 axum = "0.7"
+tonlib-core = "0.19.2"
+tower-http = { version = "0.6.1", features = ["cors"] }
 
 
 # internal deps

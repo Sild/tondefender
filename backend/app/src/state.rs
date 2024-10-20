@@ -11,10 +11,10 @@ pub enum Confidence {
     Unknown,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub struct Asset {
     pub asset_data: stonfi_client::api::types::Asset,
-    pub confidence: Confidence,
+    pub rating: usize,
 }
 
 pub type StatePtr = Arc<RwLock<State>>;
@@ -38,14 +38,14 @@ impl State {
         let assets = self.stonfi_client.get_assets().await?;
         self.stonfi_whitelist_map.clear();
         for raw_asset in assets.asset_list {
-            let confidence = if raw_asset.community {
-                Confidence::Unknown
+            let rating = if raw_asset.community {
+                50
             } else {
-                Confidence::Ok
+                100
             };
             let asset = Asset {
                 asset_data: raw_asset,
-                confidence: confidence.clone(),
+                rating,
             };
             self.stonfi_whitelist_map.insert(asset.asset_data.contract_address.clone(), asset);
         }
@@ -58,26 +58,19 @@ impl State {
         Ok(())
     }
 
-    pub async fn get_asset_confidence(&self, addr: &str) -> anyhow::Result<Confidence> {
+    pub async fn get_asset(&self, addr: &str) -> anyhow::Result<Option<Asset>> {
         if self.stonfi_whitelist_map.contains_key(addr) {
             log::debug!("found asset in whitelist map: {addr}");
             let asset = self.stonfi_whitelist_map.get(addr).unwrap();
-            return Ok(asset.confidence.clone())
+            return Ok(Some(asset.clone()))
         }
-        let asset = match self.stonfi_client.get_asset(addr).await? {
-            Some(rsp) => rsp.asset,
-            None => {
-                log::debug!("asset not found: {addr}");
-                return Ok(Confidence::Unknown)
-            },
-        };
-        log::debug!("asset {addr} found by extra request");
-        let confidence = if asset.blacklisted {
-            Confidence::Bad
-        } else {
-            Confidence::Unknown
-        };
-        Ok(confidence)
+        let asset = self.stonfi_client.get_asset(addr).await?.map(|rsp| {
+            Asset {
+                asset_data: rsp.asset,
+                rating: 50,
+            }
+        });
+        Ok(asset)
     }
 
     pub fn get_domain_confidence(&self, name: &str) -> String {

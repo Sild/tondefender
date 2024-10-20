@@ -5,6 +5,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use crate::handlers;
+use tower_http::cors::{CorsLayer};
+
 
 pub struct Service {
     app_state: StatePtr,
@@ -24,8 +26,9 @@ impl Service {
     pub async fn run(self, listening_addr: &str) -> anyhow::Result<()> {
         let app = Router::new()
             .route("/", get(handlers::root))
-            .route("/coin/", get(handlers::coin))
+            .route("/address_info/", get(handlers::address_info))
             .route("/site/", get(handlers::site))
+            .layer(CorsLayer::permissive())
             .with_state(self.app_state.clone());
 
         log::info!("listening on http://{}/", listening_addr);

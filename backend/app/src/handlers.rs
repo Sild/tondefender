@@ -1,29 +1,52 @@
+use std::str::FromStr;
 use axum::body::Body;
 use axum::extract::{Query, State};
+use axum::http::StatusCode;
 use axum::response::Response;
 use serde::Deserialize;
+use tonlib_core::TonAddress;
 use crate::state::StatePtr;
-
 pub async fn root() -> Response {
     Response::new(Body::from("hi"))
 }
 
 
 #[derive(Deserialize)]
-pub struct CoinParams {
+pub struct AddressInfoParams {
     address: Option<String>,
 }
 
-pub async fn coin(State(state): State<StatePtr>, Query(params): Query<CoinParams>) -> Response {
+pub async fn address_info(State(state): State<StatePtr>, Query(params): Query<AddressInfoParams>) -> Result<String, StatusCode> {
     let address = params.address.unwrap_or_default();
     if address.is_empty() {
-        return Response::new(Body::from("'address' param is required"));
+        return Err(StatusCode::BAD_REQUEST);
     }
-    let confidence = match state.read().await.get_asset_confidence(&address).await {
+
+    if let Err(err) = TonAddress::from_str(&address) {
+        log::warn!("Fail to parse address: {address}, err: {:?}", err);
+        return Err(StatusCode::BAD_REQUEST);
+    }
+    let maybe_asset = match state.read().await.get_asset(&address).await {
         Ok(asset) => asset,
-        Err(e) => return Response::new(Body::from(format!("error: {:?}", e))),
+        Err(e) => return {
+            log::error!("Error getting asset: {:?}", e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        },
     };
-    Response::new(Body::from(format!("{:?}", confidence)))
+    match maybe_asset {
+        Some(asset) => {
+            let rsp_body = match serde_json::to_string(&asset) {
+                Ok(body) => body,
+                Err(e) => {
+                    log::error!("Error serializing asset: {:?}", e);
+                    return Err(StatusCode::INTERNAL_SERVER_ERROR);
+                }
+            };
+            log::debug!("Found asset for addr: {address}");
+            Ok(rsp_body)
+        },
+        None => Err(StatusCode::NOT_FOUND),
+    }
 }
 
 #[derive(Deserialize)]

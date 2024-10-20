@@ -11,9 +11,9 @@ function site_has_ton_connect(body_html) {
     const TON_CONNECT_PATTERNS = new Set(['ton-connect', 'tonconnect', 'connect wallet']);
     let body_html_lower = body_html.toLowerCase();
     for (let str of TON_CONNECT_PATTERNS) {
-      if (body_html_lower.includes(str)) {
-        return true;
-      }
+        if (body_html_lower.includes(str)) {
+            return true;
+        }
     }
     return false;
 }
@@ -62,7 +62,7 @@ async function check_ton_connect() {
 }
 
 
-window.onload=async function() {
+window.onload = async function () {
     console.log('TonDefender: activating...');
     const new_div = document.createElement("div");
     new_div.setAttribute("id", 'tondefender-block');
@@ -90,27 +90,32 @@ window.onload=async function() {
     document.body.insertBefore(new_div, document.body.firstChild);
 
     let body = document.getElementsByTagName('body')[0];
-    var observer = new MutationObserver(function(mutations) {
-        if (mutations.length === 1 && mutations[0].target.id === 'tondefender-block'){
+    var observer = new MutationObserver(function (mutations) {
+        if (mutations.length === 1 && mutations[0].target.id === 'tondefender-block') {
             return
         }
         body_change_handler();
     });
-    observer.observe(body, {attributes: true, childList: true, subtree: true});
+    observer.observe(body, { attributes: true, childList: true, subtree: true });
 };
 
 function extract_bc_addresses(site_body) {
     let re = /[a-zA-Z0-9_]{48}/g;
     let addresses = site_body.match(re);
     if (addresses) {
-      return addresses;
+        addresses = [...new Set(addresses)];
+        return addresses;
     }
-    return [];
-  }
 
-  async function update_bc_addresses() {
-    let body_html = document.body.innerHTML;
-    let addresses = extract_bc_addresses(body_html);
+    return [];
+}
+
+async function update_bc_addresses() {
+    let body_cloned = document.body.cloneNode(true);
+    console.log('body_cloned:', body_cloned);
+    body_cloned.removeChild(body_cloned.querySelector('#tondefender-block'));
+    let addresses = extract_bc_addresses(body_cloned.innerHTML);
+    // let addresses = extract_bc_addresses(document.getElementsByTagName("body")[0].innerHTML);
     let addresses_info = [];
     for (let address of addresses) {
         addr_info = await get_address_info(address);
@@ -120,14 +125,18 @@ function extract_bc_addresses(site_body) {
         let addr_info_string = "token: " + addr_info.asset_data.display_name + ", addr: " + address + ", rating: " + addr_info.rating;
         addresses_info.push(addr_info_string);
     }
-    // observer.disconnect();
-    // document.body.innerHTML = body_html;
-    // observer.observe(body, {attributes: true, childList: true, subtree: true});
-    console.log('Addressed info', addresses_info);
-  }
+    let tondefender_block = document.getElementById('tondefender-block');
+    if (addresses_info.length === 0) {
+        tondefender_block.style.display = 'none';
+        return;
+    }
+    let assets_info_str = addresses_info.join('<br>');
+    tondefender_block.innerHTML = 'TonDefender: <br>' + assets_info_str;
+    tondefender_block.style.display = 'flex';
+}
 
 
 async function body_change_handler() {
     await check_ton_connect();
     await update_bc_addresses();
-  }
+}

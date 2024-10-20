@@ -91,7 +91,9 @@ window.onload=async function() {
 
     let body = document.getElementsByTagName('body')[0];
     var observer = new MutationObserver(function(mutations) {
-        co
+        if (mutations.length === 1 && mutations[0].target.id === 'tondefender-block'){
+            return
+        }
         body_change_handler();
     });
     observer.observe(body, {attributes: true, childList: true, subtree: true});
